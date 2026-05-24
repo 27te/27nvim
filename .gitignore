@@ -1,0 +1,46 @@
+# ════════════════════════════════════════════════════════════════════
+#  CLAINEV — Neovim Config .gitignore
+# ════════════════════════════════════════════════════════════════════
+
+# ── Runtime / cache (generado automáticamente por Neovim) ─────────
+plugin/packer_compiled.lua
+ftplugin/
+
+# ── Lazy.nvim ─────────────────────────────────────────────────────
+# Descomenta la siguiente línea si NO quieres fijar versiones de plugins.
+# Si la dejas comentada, lazy-lock.json se sube y puedes reproducir
+# el setup exacto en cualquier máquina con :Lazy restore
+# lazy-lock.json
+
+# ── Neovim session / swap / undo (si alguien los guarda en el config) ─
+*.swp
+*.swo
+*~
+.netrwhist
+Session.vim
+.session/
+
+# ── Secretos / credenciales ───────────────────────────────────────
+.env
+.env.*
+secrets.lua
+**/secrets/**
+
+# ── Datos de plugins (se regeneran solos) ────────────────────────
+spell/
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── Editores externos ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,58 @@
+-- ════════════════════════════════════════════════════════════════════
+--  OPTIONS
+-- ════════════════════════════════════════════════════════════════════
+
+-- Detect OS (must be before lazy)
+vim.g.is_windows    = vim.fn.has "win32" == 1
+
+-- Leader (must be before lazy)
+vim.g.mapleader     = " "
+vim.g.maplocalleader = " "
+vim.g.have_nerd_font = true
+
+local opt = vim.opt
+
+-- UI
+opt.number         = true
+opt.relativenumber = true   -- hybrid line numbers
+opt.cursorline     = true
+opt.showmode       = false  -- statusline handles this
+opt.signcolumn     = "yes"
+opt.termguicolors  = true
+opt.conceallevel   = 0
+opt.pumheight      = 10
+opt.list           = true
+opt.listchars      = { tab = "» ", trail = "·", nbsp = "␣" }
+
+-- Behaviour
+opt.mouse          = ""     -- 100% keyboard
+opt.clipboard      = "unnamedplus"
+opt.breakindent    = true
+opt.undofile       = true
+opt.updatetime     = 200
+opt.timeoutlen     = 400
+opt.inccommand     = "split" -- live preview of :s substitutions
+
+-- Search
+opt.ignorecase     = true
+opt.smartcase      = true
+
+-- Splits
+opt.splitright     = true
+opt.splitbelow     = true
+
+-- Scroll
+opt.scrolloff      = 8
+opt.sidescrolloff  = 8
+opt.wrap           = false
+
+-- Indentation (defaults; overridden per-filetype in autocmds)
+opt.tabstop        = 2
+opt.shiftwidth     = 2
+opt.expandtab      = true
+opt.smartindent    = true
+
+-- Folding via treesitter
+opt.foldmethod     = "expr"
+opt.foldexpr       = "nvim_treesitter#foldexpr()"
+opt.foldlevel      = 99
