@@ -16,6 +16,9 @@ A fast, modular Neovim setup for full-stack and systems development.
 ![Neovim](https://img.shields.io/badge/Neovim-0.10+-57A143?style=flat&logo=neovim&logoColor=white)
 ![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?style=flat&logo=lua&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat)
+![Windows](https://img.shields.io/badge/Windows-native-0078D4?style=flat&logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)
+![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)
 
 </div>
 
@@ -30,10 +33,12 @@ A fast, modular Neovim setup for full-stack and systems development.
 - Neovim >= 0.10
 - Git
 - [Nerd Font](https://www.nerdfonts.com/) — any variant
-- `make` / `cmake` (for native extensions)
+- `cmake` (for telescope-fzf-native on Windows)
 - `node` + `npm` (for LSP servers and formatters)
 
 ## Installation
+
+### Linux / macOS
 
 ```bash
 # Backup existing config
@@ -45,6 +50,67 @@ git clone git@github.com:TU-USER/TU-REPO.git ~/.config/nvim
 # Open Neovim — plugins install automatically
 nvim
 ```
+
+### Windows (Native — Scoop)
+
+> Tested on Windows 10/11 with PowerShell. No WSL required.
+
+**1. Install Scoop** (if not already installed):
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+```
+
+**2. Install dependencies:**
+
+```powershell
+# Add buckets
+scoop bucket add extras
+scoop bucket add nerd-fonts
+
+# Core
+scoop install git neovim nodejs cmake
+
+# Nerd Font (pick one)
+scoop install nerd-fonts/JetBrainsMono-NF
+
+# Optional but recommended
+scoop install lazygit ripgrep fd
+```
+
+**3. Clone the config:**
+
+```powershell
+# Backup existing config
+if (Test-Path $env:LOCALAPPDATA\nvim) {
+    Move-Item $env:LOCALAPPDATA\nvim $env:LOCALAPPDATA\nvim.bak
+}
+
+# Clone
+git clone git@github.com:TU-USER/TU-REPO.git $env:LOCALAPPDATA\nvim
+```
+
+**4. Set API keys** (PowerShell — add to your `$PROFILE` to persist):
+
+```powershell
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+$env:OPENAI_API_KEY    = "sk-..."     # optional
+```
+
+To make them permanent via GUI: `Win + R` → `sysdm.cpl` → Advanced → Environment Variables.
+
+**5. Open Neovim:**
+
+```powershell
+nvim
+```
+
+Lazy.nvim bootstraps itself, installs all plugins, then Mason installs LSP servers and formatters automatically.
+
+> **Note:** `telescope-fzf-native` requires `cmake` on Windows. The config detects the OS automatically and uses the correct build command.
+
+---
 
 Lazy.nvim bootstraps itself on first launch and installs all plugins. LSP servers and formatters install via Mason.
 
@@ -185,17 +251,23 @@ Installed via Mason. Format on save enabled.
 
 ## AI Setup
 
-Avante uses Claude by default. Set your API key as an environment variable:
+Avante uses Claude by default. Set your API keys as environment variables.
+
+**Linux / macOS** — add to `.bashrc` / `.zshrc`:
 
 ```bash
-# Claude
 export ANTHROPIC_API_KEY="sk-ant-..."
-
-# OpenAI (optional)
-export OPENAI_API_KEY="sk-..."
+export OPENAI_API_KEY="sk-..."  # optional
 ```
 
-Add it to your shell profile (`.bashrc`, `.zshrc`) to persist.
+**Windows** — add to PowerShell `$PROFILE`:
+
+```powershell
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+$env:OPENAI_API_KEY    = "sk-..."     # optional
+```
+
+Or permanently via: `Win + R` → `sysdm.cpl` → Advanced → Environment Variables.
 
 ---
 
