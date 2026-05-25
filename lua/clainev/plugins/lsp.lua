@@ -150,8 +150,12 @@ return {
         bashls    = {},
       }
 
+      local ensure_installed = vim.tbl_filter(function(server)
+        return server ~= "dartls"
+      end, vim.tbl_keys(servers))
+
       require("mason-lspconfig").setup {
-        ensure_installed      = vim.tbl_keys(servers),
+        ensure_installed      = ensure_installed,
         automatic_installation = true,
       }
 
