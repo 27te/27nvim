@@ -299,7 +299,7 @@ Installed automatically via Mason:
 
 Installed via Mason. Format on save enabled.
 
-`prettier` · `black` · `isort` · `gofumpt` · `goimports` · `rustfmt` · `google-java-format` · `clang-format` · `stylua` · `php-cs-fixer` · `sqlfmt` · `shfmt` · `buf` · `dart_format`
+`prettier` · `black` · `ruff` (imports) · `gofumpt` · `goimports` · `rustfmt` · `google-java-format` · `clang-format` · `stylua` · `php-cs-fixer` · `sqlfmt` · `shfmt` · `buf` · `dart_format`
 
 ## Debug adapters (DAP)
 

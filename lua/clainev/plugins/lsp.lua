@@ -209,7 +209,7 @@ return {
       require("mason-tool-installer").setup {
         ensure_installed = {
           -- formatters
-          "prettier", "stylua", "black", "isort", "php-cs-fixer",
+          "prettier", "stylua", "black", "php-cs-fixer",
           "google-java-format", "shfmt", "clang-format", "sqlfmt",
           "gofumpt", "goimports", "buf",
           -- linters
@@ -265,7 +265,8 @@ return {
         markdown        = { "prettier" },
         graphql         = { "prettier" },
         php             = { "php_cs_fixer" },
-        python          = { "black", "isort" },
+        -- isort roto en Windows (--line-ending con CRLF); ruff ordena imports
+        python          = { "ruff_organize_imports", "black" },
         go              = { "gofumpt", "goimports" },
         rust            = { "rustfmt" },
         java            = { "google_java_format" },
