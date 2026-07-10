@@ -12,6 +12,7 @@ return {
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
       "hrsh7th/cmp-nvim-lua",
+      "hrsh7th/cmp-cmdline",
       {
         "L3MON4D3/LuaSnip",
         build        = vim.g.is_windows and "" or "make install_jsregexp",
@@ -94,6 +95,27 @@ return {
           documentation = cmp.config.window.bordered(),
         },
       }
+
+      -- SQL: autocompletado de tablas/columnas desde la conexión dadbod
+      cmp.setup.filetype({ "sql", "mysql", "plsql" }, {
+        sources = cmp.config.sources(
+          { { name = "vim-dadbod-completion" } },
+          { { name = "buffer" } }
+        ),
+      })
+
+      -- Búsqueda `/` y cmdline `:` con autocompletado
+      cmp.setup.cmdline({ "/", "?" }, {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = { { name = "buffer" } },
+      })
+      cmp.setup.cmdline(":", {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources(
+          { { name = "path" } },
+          { { name = "cmdline" } }
+        ),
+      })
     end,
   },
 }

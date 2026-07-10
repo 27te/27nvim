@@ -5,6 +5,22 @@
 -- Detect OS (must be before lazy)
 vim.g.is_windows    = vim.fn.has "win32" == 1
 
+-- Windows + MinGW: tree-sitter CLI compila con cl.exe por defecto;
+-- sin MSVC hay que apuntarlo a gcc/g++ (parsers de treesitter y kulala)
+if vim.g.is_windows and vim.fn.executable "cl" == 0 and vim.fn.executable "gcc" == 1 then
+  vim.env.CC  = vim.env.CC or "gcc"
+  vim.env.CXX = vim.env.CXX or "g++"
+end
+
+-- jdtls necesita JDK 21+: usar el Temurin de scoop (solo dentro de nvim,
+-- sin cambiar el Java del sistema)
+if vim.g.is_windows then
+  local temurin = vim.fn.expand "~/scoop/apps/temurin-lts-jdk/current"
+  if vim.uv.fs_stat(temurin .. "/bin/java.exe") then
+    vim.env.JAVA_HOME = temurin
+  end
+end
+
 -- Leader (must be before lazy)
 vim.g.mapleader     = " "
 vim.g.maplocalleader = " "
@@ -54,5 +70,8 @@ opt.smartindent    = true
 
 -- Folding via treesitter
 opt.foldmethod     = "expr"
-opt.foldexpr       = "nvim_treesitter#foldexpr()"
+opt.foldexpr       = "v:lua.vim.treesitter.foldexpr()"
 opt.foldlevel      = 99
+
+-- Sessions (persistence.nvim)
+opt.sessionoptions = { "buffers", "curdir", "tabpages", "winsize", "help", "globals", "skiprtp", "folds" }

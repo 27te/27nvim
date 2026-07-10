@@ -18,6 +18,8 @@ require("lazy").setup({
   { import = "clainev.plugins.editor" },
   { import = "clainev.plugins.lsp" },
   { import = "clainev.plugins.completion" },
+  { import = "clainev.plugins.dap" },
+  { import = "clainev.plugins.test" },
   { import = "clainev.plugins.git" },
   { import = "clainev.plugins.tools" },
   { import = "clainev.plugins.ai" },

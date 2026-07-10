@@ -1,14 +1,23 @@
 -- ════════════════════════════════════════════════════════════════════
 --  LSP
---  mason · mason-lspconfig · nvim-lspconfig · conform · fidget
+--  mason · mason-lspconfig · mason-tool-installer · nvim-lspconfig
+--  schemastore · conform · fidget
 -- ════════════════════════════════════════════════════════════════════
 
 return {
   {
+    "williamboman/mason.nvim",
+    cmd  = { "Mason", "MasonInstall", "MasonUpdate", "MasonUninstall", "MasonLog" },
+    opts = {},
+  },
+  {
     "neovim/nvim-lspconfig",
+    event        = { "BufReadPre", "BufNewFile" },
     dependencies = {
-      { "williamboman/mason.nvim",           opts = {} },
+      "williamboman/mason.nvim",
       { "williamboman/mason-lspconfig.nvim", opts = {} },
+      "WhoIsSethDaniel/mason-tool-installer.nvim",
+      "b0o/schemastore.nvim",
       { "j-hui/fidget.nvim",                 opts = {} },
     },
     config = function()
@@ -39,13 +48,13 @@ return {
           map("<leader>lf",  function() vim.lsp.buf.format { async = true } end, "Format")
           map("<leader>li",  "<cmd>LspInfo<CR>",           "LSP Info")
           map("<leader>lr",  "<cmd>LspRestart<CR>",        "LSP Restart")
-          map("[d",          vim.diagnostic.goto_prev,     "Prev Diagnostic")
-          map("]d",          vim.diagnostic.goto_next,     "Next Diagnostic")
+          map("[d",          function() vim.diagnostic.jump { count = -1, float = true } end, "Prev Diagnostic")
+          map("]d",          function() vim.diagnostic.jump { count = 1, float = true } end,  "Next Diagnostic")
           map("<leader>ld",  vim.diagnostic.open_float,    "Line Diagnostics")
 
           -- Inlay hints (Neovim 0.10+)
           local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client.supports_method "textDocument/inlayHint" then
+          if client and client:supports_method "textDocument/inlayHint" then
             map("<leader>lh", function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, "Toggle Inlay Hints")
@@ -55,7 +64,7 @@ return {
 
       -- ── Server list ───────────────────────────────────────────────
       local servers = {
-        -- Web
+        -- Web / TypeScript / JavaScript (NestJS, Elysia, React)
         ts_ls       = {
           settings = {
             typescript = { inlayHints = {
@@ -73,17 +82,25 @@ return {
         cssls       = {},
         emmet_ls    = {},
         tailwindcss = {},
-        jsonls      = {},
+        jsonls      = {
+          settings = {
+            json = {
+              schemas  = require("schemastore").json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        },
 
-        -- PHP
+        -- PHP / Laravel
         intelephense = {},
 
-        -- Python
+        -- Python (Flask, FastAPI): pyright = tipos, ruff = lint/imports
         pyright = {
           settings = {
             python = { analysis = { typeCheckingMode = "basic", autoSearchPaths = true } },
           },
         },
+        ruff = {},
 
         -- Go
         gopls = {
@@ -101,11 +118,12 @@ return {
           },
         },
 
-        -- Rust
+        -- Rust (Axum, SQLx)
         rust_analyzer = {
           settings = {
             ["rust-analyzer"] = {
-              checkOnSave = { command = "clippy" },
+              checkOnSave = true,
+              check       = { command = "clippy" },
               cargo       = { allFeatures = true },
               inlayHints  = {
                 parameterHints = { enable = true },
@@ -116,11 +134,19 @@ return {
           },
         },
 
+        -- Java / Spring Boot (jdtls necesita JDK 21+ en PATH)
+        jdtls   = {},
+        lemminx = {},  -- XML: pom.xml, configs
+
         -- C/C++
         clangd = {},
 
         -- SQL
         sqls = {},
+
+        -- APIs avanzadas: GraphQL · gRPC/protobuf
+        graphql = {},
+        buf_ls  = {},
 
         -- Dart / Flutter (managed by flutter-tools, kept here for fallback)
         dartls = {},
@@ -143,11 +169,32 @@ return {
           },
         },
 
-        -- Infra / DevOps
-        yamlls    = {},
-        taplo     = {},
-        dockerls  = {},
-        bashls    = {},
+        -- Infra / DevOps: Docker, Compose, Kubernetes, Helm, YAML
+        -- (Nginx: highlighting via treesitter; su LSP requiere Python <3.14)
+        yamlls = {
+          settings = {
+            yaml = {
+              schemaStore = { enable = false, url = "" },  -- schemastore.nvim lo maneja
+              schemas     = vim.tbl_deep_extend("force",
+                require("schemastore").yaml.schemas(),
+                {
+                  kubernetes = {
+                    "*deployment*.{yml,yaml}", "*service*.{yml,yaml}",
+                    "*ingress*.{yml,yaml}", "*configmap*.{yml,yaml}",
+                    "*secret*.{yml,yaml}", "**/k8s/**/*.{yml,yaml}",
+                    "**/kubernetes/**/*.{yml,yaml}", "**/manifests/**/*.{yml,yaml}",
+                  },
+                }),
+              format = { enable = false },
+            },
+          },
+        },
+        taplo                            = {},
+        dockerls                         = {},
+        docker_compose_language_service  = {},
+        helm_ls                          = {},
+        bashls                           = {},
+        powershell_es                    = {},
       }
 
       local ensure_installed = vim.tbl_filter(function(server)
@@ -155,8 +202,22 @@ return {
       end, vim.tbl_keys(servers))
 
       require("mason-lspconfig").setup {
-        ensure_installed      = ensure_installed,
-        automatic_installation = true,
+        ensure_installed = ensure_installed,
+      }
+
+      -- Formatters · linters · debug adapters (no-LSP) via Mason
+      require("mason-tool-installer").setup {
+        ensure_installed = {
+          -- formatters
+          "prettier", "stylua", "black", "isort", "php-cs-fixer",
+          "google-java-format", "shfmt", "clang-format", "sqlfmt",
+          "gofumpt", "goimports", "buf",
+          -- linters
+          "hadolint", "shellcheck",
+          -- debug adapters (DAP)
+          "debugpy", "delve", "codelldb", "js-debug-adapter", "php-debug-adapter",
+        },
+        run_on_start = true,
       }
 
       for server, config in pairs(servers) do
@@ -189,7 +250,7 @@ return {
     "stevearc/conform.nvim",
     event = "BufWritePre",
     opts  = {
-      format_on_save = { timeout_ms = 1000, lsp_fallback = true },
+      format_on_save = { timeout_ms = 1500, lsp_fallback = true },
       formatters_by_ft = {
         javascript      = { "prettier" },
         javascriptreact = { "prettier" },
@@ -207,6 +268,8 @@ return {
         python          = { "black", "isort" },
         go              = { "gofumpt", "goimports" },
         rust            = { "rustfmt" },
+        java            = { "google_java_format" },
+        proto           = { "buf" },
         c               = { "clang_format" },
         cpp             = { "clang_format" },
         lua             = { "stylua" },

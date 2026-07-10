@@ -28,7 +28,7 @@ return {
         bufferline       = true,
       },
     },
-    config = function(_, opts)
+    config   = function(_, opts)
       require("catppuccin").setup(opts)
       vim.cmd.colorscheme "catppuccin-mocha"
     end,
@@ -94,17 +94,22 @@ return {
       "nvim-tree/nvim-web-devicons",
       "MunifTanjim/nui.nvim",
     },
-    opts = {
+    opts         = {
       close_if_last_window = true,
-      window               = { width = 32 },
+      window               = {
+        position = "left",
+        width = 30,
+      },
       filesystem           = {
-        filtered_items = {
+        filtered_items         = {
           hide_dotfiles   = false,
           hide_gitignored = false,
           hide_by_name    = { "node_modules", ".DS_Store" },
         },
+        async_directory_scan   = "always",
+        scan_mode              = "shallow",
         follow_current_file    = { enabled = true },
-        use_libuv_file_watcher = true,
+        use_libuv_file_watcher = false,
       },
     },
   },
@@ -130,14 +135,14 @@ return {
           "",
         },
         center = {
-          { icon = "  ", key = "f", desc = "Find File",    action = "Telescope find_files" },
-          { icon = "  ", key = "w", desc = "Find Word",    action = "Telescope live_grep" },
+          { icon = "  ", key = "f", desc = "Find File", action = "Telescope find_files" },
+          { icon = "  ", key = "w", desc = "Find Word", action = "Telescope live_grep" },
           { icon = "  ", key = "r", desc = "Recent Files", action = "Telescope oldfiles" },
-          { icon = "  ", key = "e", desc = "Explorer",     action = "Neotree toggle" },
-          { icon = "  ", key = "g", desc = "LazyGit",      action = "LazyGit" },
-          { icon = "󰒲  ", key = "l", desc = "Lazy",         action = "Lazy" },
-          { icon = "  ", key = "m", desc = "Mason",        action = "Mason" },
-          { icon = "󰗼  ", key = "q", desc = "Quit",         action = "qa" },
+          { icon = "  ", key = "e", desc = "Explorer", action = "Neotree toggle" },
+          { icon = "  ", key = "g", desc = "LazyGit", action = "LazyGit" },
+          { icon = "󰒲  ", key = "l", desc = "Lazy", action = "Lazy" },
+          { icon = "  ", key = "m", desc = "Mason", action = "Mason" },
+          { icon = "󰗼  ", key = "q", desc = "Quit", action = "qa" },
         },
         footer = { "", "  Clainev — ship fast, measure, iterate" },
       },
@@ -157,9 +162,13 @@ return {
         { "<leader>g", group = "Git" },
         { "<leader>l", group = "LSP" },
         { "<leader>x", group = "Trouble" },
-        { "<leader>t", group = "Terminal" },
+        { "<leader>t", group = "Terminal/Tabs" },
         { "<leader>a", group = "AI" },
-        { "<leader>e", group = "Explorer" },
+        { "<leader>d", group = "Debug" },
+        { "<leader>n", group = "Tests" },
+        { "<leader>s", group = "Split/Session" },
+        { "<leader>D", group = "Database" },
+        { "<leader>R", group = "REST (.http)" },
         { "<leader>F", group = "Flutter" },
       }
     end,

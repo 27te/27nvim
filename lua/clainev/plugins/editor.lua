@@ -65,30 +65,35 @@ return {
     end,
   },
 
-  -- ── TREESITTER ────────────────────────────────────────────────────
+  -- ── TREESITTER (rama main — API nueva) ───────────────────────────
   {
     "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    event = { "BufReadPost", "BufNewFile", "VeryLazy" },
-    lazy  = false,
+    branch = "main",
+    build  = ":TSUpdate",
+    lazy   = false,
     config = function()
-      local ok, configs = pcall(require, "nvim-treesitter.configs")
-      if not ok then return end
-      configs.setup {
-        ensure_installed = {
-          "html", "css", "javascript", "typescript", "tsx",
-          "json", "jsonc", "lua", "python", "go", "rust",
-          "c", "cpp", "dart", "php",
-          "sql", "markdown", "markdown_inline",
-          "yaml", "toml", "dockerfile",
-          "bash", "regex", "graphql",
-          "gitignore", "gitcommit", "diff", "vim", "vimdoc",
-        },
-        sync_install  = false,
-        auto_install  = true,
-        highlight     = { enable = true, additional_vim_regex_highlighting = false },
-        indent        = { enable = true },
+      -- Requiere tree-sitter CLI + compilador C para compilar parsers
+      require("nvim-treesitter").install {
+        "html", "css", "javascript", "typescript", "tsx",
+        "json", "lua", "python", "go", "rust",
+        "c", "cpp", "dart", "php", "java", "groovy",
+        "sql", "markdown", "markdown_inline",
+        "yaml", "toml", "dockerfile", "helm", "nginx",
+        "bash", "powershell", "regex", "graphql", "proto", "http",
+        "gomod", "gosum", "gowork", "xml", "ini", "properties",
+        "gitignore", "gitcommit", "diff", "vim", "vimdoc",
       }
+
+      -- Activar highlight + indent por buffer (la rama main no lo hace sola)
+      vim.api.nvim_create_autocmd("FileType", {
+        group    = vim.api.nvim_create_augroup("ClainevTreesitter", { clear = true }),
+        callback = function(ev)
+          local lang = vim.treesitter.language.get_lang(ev.match)
+          if lang and pcall(vim.treesitter.start, ev.buf, lang) then
+            vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
+      })
     end,
   },
 

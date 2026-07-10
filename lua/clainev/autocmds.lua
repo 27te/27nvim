@@ -66,7 +66,7 @@ autocmd("FileType", {
 
 autocmd("FileType", {
   group    = augroup("PythonTabWidth", { clear = true }),
-  pattern  = "python",
+  pattern  = { "python", "php", "java" },  -- PEP 8 · PSR-12 · Java convention
   callback = function()
     vim.opt_local.tabstop    = 4
     vim.opt_local.shiftwidth = 4

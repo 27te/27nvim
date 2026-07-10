@@ -26,7 +26,11 @@ A fast, modular Neovim setup for full-stack and systems development.
 
 ## Stack
 
-`TypeScript` · `JavaScript` · `React` · `Go` · `Rust` · `Python` · `PHP` · `C/C++` · `Dart/Flutter` · `SQL`
+`TypeScript` · `JavaScript` · `React` · `Go` · `Rust` · `Python` · `PHP/Laravel` · `Java/Spring` · `Bun/Elysia` · `C/C++` · `Dart/Flutter` · `SQL`
+
+**Infra/DevOps:** `Docker` · `docker-compose` · `Kubernetes/Helm` · `Nginx` · `GraphQL` · `gRPC/protobuf` · `Bash/PowerShell` · `YAML/TOML`
+
+**IDE:** LSP + autocompletado · Debugger (DAP) · Test runner (neotest) · REST client (`.http`) · Database UI · Git · Sesiones
 
 ## Requirements
 
@@ -35,6 +39,8 @@ A fast, modular Neovim setup for full-stack and systems development.
 - [Nerd Font](https://www.nerdfonts.com/) — any variant
 - `cmake` (for telescope-fzf-native on Windows)
 - `node` + `npm` (for LSP servers and formatters)
+- `ripgrep` + `fd` (Telescope live grep)
+- **Opcionales por stack:** JDK 21+ (`jdtls` Java LSP) · `cargo-nextest` (tests de Rust con neotest) · `lazydocker` (UI de Docker) · Xdebug (debug de PHP)
 
 ## Installation
 
@@ -128,10 +134,12 @@ Lazy.nvim bootstraps itself on first launch and installs all plugins. LSP server
         ├── ui.lua               # Theme, statusline, explorer, dashboard
         ├── editor.lua           # Telescope, Treesitter, editing utilities
         ├── lsp.lua              # LSP servers, Mason, diagnostics, formatter
-        ├── completion.lua       # nvim-cmp, LuaSnip
+        ├── completion.lua       # nvim-cmp, LuaSnip, SQL/cmdline completion
+        ├── dap.lua              # Debugger (nvim-dap + UI + adapters)
+        ├── test.lua             # Test runner (neotest + adapters)
         ├── git.lua              # Gitsigns, LazyGit, Trouble
-        ├── tools.lua            # Terminal (toggleterm)
-        ├── ai.lua               # Avante (Claude / GPT)
+        ├── tools.lua            # Terminal, REST client, sessions, linters
+        ├── ai.lua               # Avante (proveedor gratuito)
         └── flutter.lua          # Flutter tools
 ```
 
@@ -148,10 +156,17 @@ Lazy.nvim bootstraps itself on first launch and installs all plugins. LSP server
 | LSP | [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) + [mason.nvim](https://github.com/williamboman/mason.nvim) |
 | Completion | [nvim-cmp](https://github.com/hrsh7th/nvim-cmp) + [LuaSnip](https://github.com/L3MON4D3/LuaSnip) |
 | Formatter | [conform.nvim](https://github.com/stevearc/conform.nvim) |
+| Debugger | [nvim-dap](https://github.com/mfussenegger/nvim-dap) + [nvim-dap-ui](https://github.com/rcarriga/nvim-dap-ui) |
+| Tests | [neotest](https://github.com/nvim-neotest/neotest) — pytest · Jest · Vitest · go test · cargo nextest · Pest |
+| REST client | [kulala.nvim](https://github.com/mistweaverco/kulala.nvim) — archivos `.http` |
+| Database | [vim-dadbod](https://github.com/tpope/vim-dadbod) + UI + completion |
+| JSON/YAML schemas | [schemastore.nvim](https://github.com/b0o/SchemaStore.nvim) — K8s, compose, GitHub Actions |
+| Extra linters | [nvim-lint](https://github.com/mfussenegger/nvim-lint) — hadolint |
+| Sessions | [persistence.nvim](https://github.com/folke/persistence.nvim) |
 | Git | [gitsigns.nvim](https://github.com/lewis6991/gitsigns.nvim) + [lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) |
 | Diagnostics | [trouble.nvim](https://github.com/folke/trouble.nvim) |
-| Terminal | [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim) |
-| AI | [avante.nvim](https://github.com/yetone/avante.nvim) (Claude / GPT) |
+| Terminal | [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim) + lazydocker |
+| AI | [avante.nvim](https://github.com/yetone/avante.nvim) (proveedor gratuito por defecto) |
 | Flutter | [flutter-tools.nvim](https://github.com/akinsho/flutter-tools.nvim) |
 
 ## Keymaps
@@ -216,9 +231,44 @@ Lazy.nvim bootstraps itself on first launch and installs all plugins. LSP server
 |---|---|
 | `<leader>e` | Toggle explorer |
 | `<leader>th/tv/tf` | Terminal horizontal / vertical / float |
+| `<leader>td` | LazyDocker (float) |
 | `<leader>xx` | Trouble diagnostics |
 | `<leader>u` | Undo tree |
-| `<leader>db` | Database UI |
+| `<leader>Du` | Database UI (dadbod) |
+| `<leader>Da` | Add DB connection |
+| `<leader>sr` / `<leader>sl` | Restore session (cwd / last) |
+
+### Debug (DAP)
+
+| Key | Action |
+|---|---|
+| `<F5>` | Continue / Start |
+| `<F10>` / `<F11>` / `<F12>` | Step over / into / out |
+| `<leader>db` | Toggle breakpoint |
+| `<leader>dB` | Conditional breakpoint |
+| `<leader>du` | Toggle debug UI |
+| `<leader>de` | Eval under cursor |
+| `<leader>dt` | Terminate |
+
+### Tests (neotest)
+
+| Key | Action |
+|---|---|
+| `<leader>nn` | Run nearest test |
+| `<leader>nf` | Run file tests |
+| `<leader>nd` | Debug nearest test |
+| `<leader>ns` | Toggle summary |
+| `<leader>no` | Show output |
+| `<leader>nw` | Watch file |
+
+### REST client (kulala — archivos `.http`)
+
+| Key | Action |
+|---|---|
+| `<leader>Rs` | Send request |
+| `<leader>Ra` | Send all |
+| `<leader>Rr` | Replay last |
+| `<leader>Rc` | Copy as cURL |
 
 ### AI (Avante)
 
@@ -241,13 +291,21 @@ Lazy.nvim bootstraps itself on first launch and installs all plugins. LSP server
 
 Installed automatically via Mason:
 
-`ts_ls` · `eslint` · `html` · `cssls` · `tailwindcss` · `emmet_ls` · `jsonls` · `intelephense` · `pyright` · `gopls` · `rust_analyzer` · `clangd` · `dartls` · `lua_ls` · `sqls` · `marksman` · `yamlls` · `taplo` · `dockerls` · `bashls`
+`ts_ls` · `eslint` · `html` · `cssls` · `tailwindcss` · `emmet_ls` · `jsonls` · `intelephense` · `pyright` · `ruff` · `gopls` · `rust_analyzer` · `jdtls` · `lemminx` · `clangd` · `dartls` · `lua_ls` · `sqls` · `graphql` · `buf_ls` · `marksman` · `yamlls` · `taplo` · `dockerls` · `docker_compose_language_service` · `helm_ls` · `bashls` · `powershell_es`
+
+> `jdtls` (Java) requiere JDK 21+ en el PATH. Nginx tiene highlighting vía treesitter (su LSP requiere Python <3.14).
 
 ## Formatters
 
 Installed via Mason. Format on save enabled.
 
-`prettier` · `black` · `isort` · `gofumpt` · `goimports` · `rustfmt` · `clang-format` · `stylua` · `php-cs-fixer` · `sqlfmt` · `shfmt` · `dart_format`
+`prettier` · `black` · `isort` · `gofumpt` · `goimports` · `rustfmt` · `google-java-format` · `clang-format` · `stylua` · `php-cs-fixer` · `sqlfmt` · `shfmt` · `buf` · `dart_format`
+
+## Debug adapters (DAP)
+
+Installed via Mason:
+
+`debugpy` (Python) · `delve` (Go) · `codelldb` (Rust/C/C++) · `js-debug-adapter` (Node/TS) · `php-debug-adapter` (Xdebug, puerto 9003)
 
 ## AI Setup
 
