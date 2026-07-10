@@ -1,6 +1,22 @@
 -- ════════════════════════════════════════════════════════════════════
 --  AI
---  avante.nvim (Claude / GPT inline assistant)
+--  avante.nvim (sidebar de chat/agente, sin autocompletado inline)
+--
+--  Proveedor por defecto: GitHub Copilot (gratis, sin API key).
+--    Primera vez: ejecuta :Copilot auth → login por navegador → reinicia nvim.
+--
+--  NOTA: el copilot.lua moderno guarda el login en auth.db (SQLite),
+--  pero avante solo lee el formato viejo hosts.json. El bloque
+--  sync_copilot_token() de abajo hace de puente: extrae el token de
+--  auth.db, lo valida contra GitHub y genera el hosts.json que avante
+--  espera. Es automático; solo requiere haber hecho :Copilot auth.
+--
+--  Alternativas gratuitas (requieren key gratuita, se cambian con
+--  :AvanteSwitchProvider gemini / groq):
+--    · gemini → key gratis en https://aistudio.google.com/apikey
+--               (variable de entorno GEMINI_API_KEY)
+--    · groq   → key gratis en https://console.groq.com/keys
+--               (variable de entorno GROQ_API_KEY)
 -- ════════════════════════════════════════════════════════════════════
 
 -- Monkey-patch para normalizar rutas temporales en Windows (plenary.path se parcha en config)
@@ -16,9 +32,54 @@ if vim.fn.has("win32") == 1 then
   end
 end
 
--- Inicialización de variables de entorno ficticias para los proxies/LMs locales
-vim.env.CLAINEV_FREE_API_KEY = "free"
-vim.env.OLLAMA_API_KEY = "ollama"
+-- Genera hosts.json (formato que lee avante) a partir del auth.db del
+-- copilot.lua moderno. Devuelve true si Copilot queda autenticado.
+local function sync_copilot_token()
+  local dir = vim.fn.has("win32") == 1
+      and vim.fn.expand("$LOCALAPPDATA/github-copilot")
+      or vim.fn.expand("~/.config/github-copilot")
+  local hosts = dir .. "/hosts.json"
+  if vim.fn.filereadable(hosts) == 1 then return true end
+
+  -- Extraer posibles tokens (gho_/ghu_/ghp_) del auth.db y su WAL
+  local candidates, seen = {}, {}
+  for _, file in ipairs({ dir .. "/auth.db-wal", dir .. "/auth.db" }) do
+    local fd = io.open(file, "rb")
+    if fd then
+      local data = fd:read("*a")
+      fd:close()
+      for token in data:gmatch("gh[oup]_[%w_]+") do
+        -- Los tokens de GitHub miden 40 chars; el registro SQLite puede
+        -- tener bytes alfanuméricos de basura pegados al final.
+        token = token:sub(1, 40)
+        if #token == 40 and not seen[token] then
+          seen[token] = true
+          table.insert(candidates, token)
+        end
+      end
+    end
+  end
+
+  -- Validar cada candidato contra la API de GitHub (una sola vez;
+  -- después existe hosts.json y este bloque no vuelve a correr)
+  for _, token in ipairs(candidates) do
+    local status = vim.fn.system({
+      "curl", "-s", "-o", vim.fn.has("win32") == 1 and "NUL" or "/dev/null",
+      "-w", "%{http_code}", "--max-time", "5",
+      "-H", "Authorization: token " .. token,
+      "https://api.github.com/user",
+    })
+    if vim.trim(status) == "200" then
+      local fd = io.open(hosts, "w")
+      if fd then
+        fd:write(string.format('{"github.com":{"user":"nvim","oauth_token":"%s"}}', token))
+        fd:close()
+        return true
+      end
+    end
+  end
+  return false
+end
 
 return {
   {
@@ -35,46 +96,27 @@ return {
       "HakonHarnes/img-clip.nvim",
       "stevearc/dressing.nvim",
       "hrsh7th/nvim-cmp",
+      {
+        -- Solo como backend de autenticación para avante:
+        -- las sugerencias inline y el panel quedan desactivados.
+        "zbirenbaum/copilot.lua",
+        cmd  = "Copilot",
+        opts = {
+          suggestion = { enabled = false },
+          panel      = { enabled = false },
+        },
+      },
     },
     opts         = {
-      provider                  = "clainev_free",
-      auto_suggestions_provider = "clainev_free",
+      provider                  = "copilot",
+      auto_suggestions_provider = "copilot",
       providers                 = {
-        clainev_free = {
-          __inherited_from   = "openai",
-          endpoint           = "https://nvim-ai-chat-production.up.railway.app/v1",
-          model              = "llama-3.3-70b-versatile",
-          api_key_name       = "CLAINEV_FREE_API_KEY",
-          extra_request_body = {
-            max_tokens = 1024,
-          }
+        copilot = {
+          model = "gpt-4.1",
         },
-        clainev_free_8b = {
-          __inherited_from   = "openai",
-          endpoint           = "https://nvim-ai-chat-production.up.railway.app/v1",
-          model              = "llama-3.1-8b-instant",
-          api_key_name       = "CLAINEV_FREE_API_KEY",
-          extra_request_body = {
-            max_tokens = 1024,
-          }
-        },
-        clainev_free_qwen = {
-          __inherited_from   = "openai",
-          endpoint           = "https://nvim-ai-chat-production.up.railway.app/v1",
-          model              = "qwen-2.5-32b",
-          api_key_name       = "CLAINEV_FREE_API_KEY",
-          extra_request_body = {
-            max_tokens = 1024,
-          }
-        },
-        clainev_free_deepseek = {
-          __inherited_from   = "openai",
-          endpoint           = "https://nvim-ai-chat-production.up.railway.app/v1",
-          model              = "deepseek-r1-distill-qwen-32b",
-          api_key_name       = "CLAINEV_FREE_API_KEY",
-          extra_request_body = {
-            max_tokens = 1024,
-          }
+        gemini = {
+          model        = "gemini-2.5-flash",
+          api_key_name = "GEMINI_API_KEY",
         },
         groq = {
           __inherited_from = "openai",
@@ -82,14 +124,8 @@ return {
           model            = "llama-3.3-70b-versatile",
           api_key_name     = "GROQ_API_KEY",
         },
-        ollama = {
-          __inherited_from = "openai",
-          endpoint         = "http://127.0.0.1:11434/v1",
-          model            = "llama3.2",
-          api_key_name     = "OLLAMA_API_KEY",
-        },
         claude = {
-          model        = "claude-3-5-sonnet-20241022",
+          model        = "claude-sonnet-4-6",
           api_key_name = "ANTHROPIC_API_KEY",
         },
         openai = {
@@ -100,7 +136,10 @@ return {
       behaviour                 = {
         auto_suggestions      = false,
         auto_set_keymaps      = true,
-        auto_add_current_file = false,
+        -- Agregar automáticamente el archivo desde el que se abre avante
+        -- al contexto del chat, para que la IA trabaje sobre él en vez
+        -- de crear archivos nuevos.
+        auto_add_current_file = true,
       },
       windows                   = {
         width          = 35,
@@ -108,6 +147,21 @@ return {
       },
     },
     config       = function(_, opts)
+      -- El provider copilot de avante falla en setup() si no existe el
+      -- token; si aún no hay login, arrancar con gemini para que avante
+      -- funcione igual y avisar al usuario.
+      if not sync_copilot_token() then
+        opts.provider = "gemini"
+        opts.auto_suggestions_provider = "gemini"
+        vim.defer_fn(function()
+          vim.notify(
+            "[avante] Copilot sin autenticar: ejecuta :Copilot auth, "
+            .. "completa el login en el navegador y reinicia nvim",
+            vim.log.levels.WARN
+          )
+        end, 500)
+      end
+
       -- 2. Monkey-patch para plenary.path para convertir todas las barras / a \ en Windows.
       -- Esto evita fallos al crear directorios recursivamente (mkdir) debido a barras mezcladas.
       if vim.fn.has("win32") == 1 then
@@ -125,6 +179,35 @@ return {
       end
 
       require("avante").setup(opts)
+
+      -- 3. Monkey-patch para el chequeo de permisos de las herramientas de avante.
+      -- En Windows compara rutas como texto y mezcla barras / y \
+      -- (C:/Users/... vs C:\Users\...), así que siempre niega el acceso.
+      -- Normalizamos ambas rutas antes de comparar.
+      if vim.fn.has("win32") == 1 then
+        local ok_h, Helpers = pcall(require, "avante.llm_tools.helpers")
+        local ok_u, AvanteUtils = pcall(require, "avante.utils")
+        if ok_h and ok_u then
+          local original_check = Helpers.has_permission_to_access
+          Helpers.has_permission_to_access = function(abs_path)
+            if original_check(abs_path) then return true end
+            local function norm(p)
+              if not p or p == "" then return "" end
+              return (vim.fs.normalize(p):gsub("\\", "/"):lower())
+            end
+            local ap = norm(abs_path)
+            if ap == "" then return false end
+            local root = norm(AvanteUtils.get_project_root())
+            local cfg = norm(vim.fn.stdpath("config"))
+            local in_project = root ~= "" and ap:sub(1, #root) == root
+            local in_config = cfg ~= "" and ap:sub(1, #cfg) == cfg
+            if not in_project and not in_config then return false end
+            local conf = require("avante.config")
+            local bypass = conf.behaviour and conf.behaviour.allow_access_to_git_ignored_files
+            return bypass or not Helpers.is_ignored(abs_path)
+          end
+        end
+      end
     end,
   },
 }
